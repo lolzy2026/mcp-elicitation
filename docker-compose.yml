@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mcp-server:
+    build: ./mcp_server
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    networks:
+      - mcp-network
+
+  auth-server:
+    build: ./auth_server
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+    networks:
+      - mcp-network
+
+  assistant-backend:
+    build: ./assistant_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - MCP_SERVER_URL=http://mcp-server:8001/sse
+      - AUTH_SERVER_URL=http://auth-server:8002
+    depends_on:
+      - mcp-server
+    networks:
+      - mcp-network
+
+  ui:
+    build: ./ui
+    ports:
+      - "8501:8501"
+    environment:
+      - ASSISTANT_API_URL=http://assistant-backend:8000
+    depends_on:
+      - assistant-backend
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge

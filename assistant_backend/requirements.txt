@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+mcp>=1.0.0
+langchain
+langchain-core
+sse-starlette
+httpx
+
