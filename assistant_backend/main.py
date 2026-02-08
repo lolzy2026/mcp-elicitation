@@ -59,7 +59,7 @@ async def chat(request: ChatRequest):
     tool_name = "simple_tool"
     tool_args = {"message": request.message}
 
-    if "ticket v2" in message:
+    if "ticket v2" in message or "tickt v2" in message:
         tool_name = "create_ticket_v2"
         tool_args = {"initial_description": message}
     elif "login v2" in message:
@@ -84,9 +84,12 @@ async def chat(request: ChatRequest):
     # Check if it is a v2 tool (requires streaming)
     # Added "debug" to v2 check
     if "v2" in tool_name or "book" in tool_name or "debug" in tool_name:
-         asyncio.create_task(global_manager.start_tool_task(tool_name, tool_args))
+         # Pass session_id to start_tool_task
+         sid = request.session_id or str(uuid.uuid4())
+         # This is now a synchronous call that spawns a background task internally
+         global_manager.start_tool_task(sid, tool_name, tool_args)
          return StreamingResponse(
-            global_manager.attach_to_running_task(),
+            global_manager.attach_to_running_task(sid),
             media_type="application/x-ndjson"
         )
     # v1 logic (Legacy)
@@ -187,9 +190,10 @@ async def submit_elicitation(submission: ElicitationSubmission):
         )
             
     # Regular V2 Logic
-    await global_manager.submit_response(submission.response_data)
+    # Pass session_id
+    await global_manager.submit_response(submission.session_id, submission.response_data)
     
     return StreamingResponse(
-        global_manager.attach_to_running_task(),
+        global_manager.attach_to_running_task(submission.session_id),
         media_type="application/x-ndjson"
     )
